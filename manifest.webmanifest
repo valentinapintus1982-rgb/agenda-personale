@@ -1,0 +1,18 @@
+{
+  "name": "Agenda personale",
+  "short_name": "Agenda",
+  "description": "Agenda personale: attività, scadenze, progetti, report e pagamenti.",
+  "lang": "it",
+  "start_url": "./Agenda_personale.html",
+  "display": "standalone",
+  "background_color": "#f4f3f7",
+  "theme_color": "#403848",
+  "icons": [
+    {
+      "src": "agenda-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
