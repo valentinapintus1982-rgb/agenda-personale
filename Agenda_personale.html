@@ -61,6 +61,62 @@ dialog{max-height:90vh;overflow:auto}
 .calendar button.calendar-item.deadline{background:#efe9da}
 .calendar .current .day-num{color:var(--accent);font-weight:800}
 @media(max-width:790px){.calendar .calendar-day{min-height:4.8rem}}
+
+/* === Gerarchia visiva rinnovata (2026-11): tipografia, spazi, pannelli calmi === */
+:root{--panel-soft:#fbfafc;--line-soft:#ece9f1;--eyebrow:#6f6a7c}
+main{margin-inline:auto;margin-block:0}
+.panel{padding:1.15rem 1.3rem;border-color:#e9e6ee;box-shadow:0 1px 2px #1d1a260f;margin-top:1.1rem}
+main > .flex.between{padding-bottom:.5rem;border-bottom:1px solid var(--line-soft)}
+#sectionTitle{font-size:1.42rem;font-weight:650;letter-spacing:-.03em}
+h3,.row h3{font-weight:650;letter-spacing:-.01em}
+h4{margin:0}
+nav button{border:0;border-radius:.6rem;padding:.5rem .7rem;color:#d9d3e6}
+nav button:hover{background:#ffffff12;color:#fff}
+nav button[aria-pressed=true]{border:0;background:#fbfafc;color:#403848;font-weight:700;border-radius:.6rem}
+#tasks .filters{background:var(--panel-soft);border:1px solid var(--line-soft);border-radius:.8rem;padding:.7rem .85rem;margin-bottom:.9rem}
+#tasks .filters label,.filters label{font-size:.8rem}
+input,select,textarea{border-color:#ddd8e4}
+.stats{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:.6rem;margin:.7rem 0 1rem}
+.stat{background:var(--panel-soft);border-color:#eeecf2;box-shadow:none}
+.stat strong{font-size:1.5rem}
+.stat span,.stat strong{letter-spacing:-.03em}
+.stat span{text-transform:uppercase;font-size:.66rem;letter-spacing:.08em;font-weight:700}
+.tag{background:#f1eef7}
+.priority{background:#f0edf3}
+.tag,.priority{border-radius:.45rem}
+.date-entry{padding:.6rem .15rem .6rem .75rem;border-bottom:1px solid var(--line-soft);border-left:2px solid #d9d4e4}
+.date-entry p{margin:.25rem 0 0;font-size:.8rem}
+.day-overview .panel{margin-top:0}
+.quick input{background:#fff}
+.project-panel{margin-top:1.1rem}
+.project-panel h3{font-size:1.02rem;margin-bottom:.1rem}
+.project-groups{margin-top:.35rem}
+.project-group{padding:.8rem 0;border-bottom:1px solid var(--line-soft)}
+.project-group:last-child{border-bottom:0;padding-bottom:.2rem}
+.project-group-head{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;margin-bottom:.6rem}
+.project-group-head h4{font-size:.73rem;text-transform:uppercase;letter-spacing:.09em;color:var(--eyebrow);font-weight:800}
+.project-group-head button{padding:.32rem .55rem;font-size:.82rem;background:transparent;border-color:transparent;color:var(--accent)}
+.project-group-head button:hover{background:#f1eef8;filter:none}
+.project-count{color:#a9a3b8;font-weight:600;letter-spacing:0}
+.projects{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.6rem}
+.project-card{background:#fff;border-color:#e7e4ed;border-radius:.8rem;padding:.8rem .85rem;gap:.45rem;box-shadow:0 1px 2px #1d1a260a}
+.project-card:hover{border-color:var(--accent);background:#f6f4fb;box-shadow:0 2px 6px #1d1a2614}
+.project-card strong{font-size:.98rem}
+.project-card .muted{font-size:.82rem}
+.project-notes,.project-meta{font-size:.8rem}
+.pbar{display:block;height:.32rem;background:#ece9f1;border-radius:999px;overflow:hidden}
+.pbar-fill{display:block;height:100%;background:var(--accent);border-radius:999px}
+details.tools{background:var(--panel-soft);border-color:#e6e3ec}
+details.tools summary{padding:.7rem .85rem;cursor:pointer;list-style:none;font-weight:700;border-radius:.6rem;display:flex;align-items:center;gap:.5rem;color:var(--ink)}
+details.tools summary::-webkit-details-marker{display:none}
+details.tools summary::before{content:'›';display:inline-block;color:var(--eyebrow);font-size:1.05em;transition:transform .16s ease}
+details.tools[open] summary::before{transform:rotate(90deg)}
+details.tools summary:focus-visible{outline:3px solid #74679b;outline-offset:-3px;border-radius:.6rem}
+#reportTools .stats{margin-bottom:.4rem}
+@media(max-width:640px){
+  main > .flex.between{flex-direction:column;align-items:flex-start;gap:.6rem}
+  .project-group-head{flex-wrap:wrap}
+}
 </style></head>
 <body><header><h1>Agenda personale</h1><p id="todayLabel"></p><nav aria-label="Viste">
 <button data-view="day" aria-pressed="true">Dashboard</button><button data-view="calendar" aria-pressed="false">Calendario</button><button data-view="completed" aria-pressed="false">Attività completate</button><button data-view="private" aria-pressed="false">Personali</button><button data-view="payments" aria-pressed="false">Pagamenti</button>
@@ -646,32 +702,48 @@ function selectProject(id) {
 function renderProjects() {
   const projects = [...state.projects].sort((a,b) => a.priority.localeCompare(b.priority) ||
     a.name.localeCompare(b.name,'it'));
-  el('projects').replaceChildren(...workKinds.map(work => {
-    const section = node('section',undefined,'panel work-section');
-    const heading = node('div',undefined,'flex between');
-    heading.append(node('h3',workLabels[work]),action(
+  const panel = node('section',undefined,'panel project-panel');
+  const heading = node('div',undefined,'flex between');
+  heading.append(node('h3','Progetti'));
+  panel.append(heading);
+  const groups = node('div',undefined,'project-groups');
+  for (const work of workKinds) {
+    const items = projects.filter(item => item.work === work);
+    const group = node('section',undefined,'project-group');
+    const head = node('div',undefined,'project-group-head');
+    const title = node('h4',workLabels[work]);
+    title.append(node('span',' · '+items.length,'project-count'));
+    head.append(title,action(
       {research:'Nuovo progetto',international:'Nuova collaborazione',teaching:'Nuovo corso o progetto',other:'Nuovo progetto'}[work],
       () => editProject(null,work)));
-    section.append(heading);
+    group.append(head);
     const grid = node('div',undefined,'projects');
-    for (const project of projects.filter(item => item.work === work)) {
+    for (const project of items) {
       const stats = metrics(state.tasks.filter(task => task.project === project.id));
+      const share = stats.total ? Math.round(100*stats.done/stats.total) : 0;
       const card = action('',() => selectProject(project.id));
       card.className = 'project-card';
       const top = node('span',undefined,'project-card-top');
       const badge = node('span',project.priority,'priority');
       badge.dataset.priority = project.priority;
       top.append(node('strong',project.name),badge);
+      const bar = node('span',undefined,'pbar');
+      bar.setAttribute('aria-hidden','true');
+      const fill = node('span',undefined,'pbar-fill');
+      fill.style.width = share+'%';
+      bar.append(fill);
       card.append(top,node('span',[project.progress,project.course].filter(Boolean).join(' · '),'muted'));
-      if (project.notes) card.append(node('span',project.notes,'muted'));
+      if (project.notes) card.append(node('span',project.notes,'muted project-notes'));
       if (project.deadline) card.append(node('small','Scadenza '+readable(project.deadline)));
-      card.append(node('small',stats.done+' di '+stats.total+' attività completate'));
+      card.append(bar,node('small',stats.done+' di '+stats.total+' attività completate','project-meta'));
       grid.append(card);
     }
     if (!grid.childElementCount) grid.append(node('p','Nessun progetto in questo ambito.','muted'));
-    section.append(grid);
-    return section;
-  }));
+    group.append(grid);
+    groups.append(group);
+  }
+  panel.append(groups);
+  el('projects').replaceChildren(panel);
 }
 function renderProjectDetail(project) {
   const tasks = state.tasks.filter(task => task.project === project.id)
@@ -1530,4 +1602,4 @@ setInterval(refreshToday,60000);
 if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
-</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5f6d5f64ffdea40',t:'MTc5NTUwNjc2Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5f6d5f64ffdea40',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html>
+</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5fbba95a806ea43',t:'MTc5NTU1ODA3MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5fbba95a806ea43',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html>
