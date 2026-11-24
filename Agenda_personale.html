@@ -63,7 +63,7 @@ dialog{max-height:90vh;overflow:auto}
 @media(max-width:790px){.calendar .calendar-day{min-height:4.8rem}}
 </style></head>
 <body><header><h1>Agenda personale</h1><p id="todayLabel"></p><nav aria-label="Viste">
-<button data-view="day" aria-pressed="true">Dashboard</button><button data-view="calendar" aria-pressed="false">Calendario</button><button data-view="completed" aria-pressed="false">Attività completate</button><button data-view="private" aria-pressed="false">Vita privata</button><button data-view="payments" aria-pressed="false">Pagamenti</button>
+<button data-view="day" aria-pressed="true">Dashboard</button><button data-view="calendar" aria-pressed="false">Calendario</button><button data-view="completed" aria-pressed="false">Attività completate</button><button data-view="private" aria-pressed="false">Personali</button><button data-view="payments" aria-pressed="false">Pagamenti</button>
 </nav></header>
 <main><div class="flex between"><h2 id="sectionTitle">Dashboard</h2><div class="actions"><button class="primary" id="add">Nuova attività</button><button id="addEvent">Nuovo evento</button></div></div><p id="message" role="status" hidden></p>
 <div id="dayOverview" class="day-overview">
@@ -125,6 +125,7 @@ const defaults = {
   Privata: ['Personale','Famiglia','Attività fisica','Viaggi','Cene e pranzi','Feste','Spa e benessere','Concerti','Cinema e teatro']
 };
 const areas = Object.keys(defaults);
+const areaLabels = {Accademica:'Accademica',Professionale:'Professionale',Privata:'Personali'};
 const kinds = ['Attività','Evento','Appuntamento','Scadenza','Pagamento'];
 const paymentCategories = ['Mutuo','Condominio','Prestiti e rate','Bollette','Auto','Casa','Assicurazioni','Imposte e tasse','Altro'];
 const REPEATS = [['monthly','Mensile'],['bimonthly','Bimestrale'],['quarterly','Trimestrale'],['semiannual','Semestrale'],['annual','Annuale']];
@@ -143,11 +144,18 @@ const ambits = {
  teaching:['Didattica','Accademica','teaching',['Lezione','Preparazione lezione','Esami e lauree','Supervisione tesisti o specializzandi','Seminario o workshop','Orientamento']],
  academic:['Incarichi istituzionali','Accademica','other',['Consiglio','Commissione','Adempimento']],
  professional:['Professione e incarichi','Professionale','other',['Consulenza','Incarico','Amministrazione','Sopralluogo']],
- private:['Vita privata','Privata','other',['Casa e commissioni','Salute e cura personale','Sport','Famiglia e tempo libero','Viaggi','Cene e pranzi','Feste','Spa e benessere','Concerti','Cinema e teatro']]
+ pcare:['Cura della persona','Privata','other',['Parrucchiere','Estetista','Massaggio','Palestra','Benessere']],
+ phealth:['Salute','Privata','other',['Visita medica','Dentista','Analisi cliniche','Farmacia','Vaccinazioni','Igiene e controlli']],
+ phome:['Casa','Privata','other',['Spesa','Idraulico','Elettricista','Imbianchino','Manutenzione','Spese condominiali']],
+ pcar:['Auto','Privata','other',['Tagliando','Revisione','Assicurazione','Carburante','Gomme','Lavaggio']],
+ ptravel:['Viaggi','Privata','other',['Biglietti','Hotel','Itinerario','Documenti di viaggio','Spostamenti']],
+ paltro:['Altro','Privata','other',['Banca','Documenti','Regali','Famiglia e tempo libero','Concerti e spettacoli']]
 };
 function ambitOf(area,work) {
+  if (area === 'Privata') return work === 'other' ? 'paltro' :
+    (Object.keys(ambits).find(key => ambits[key][1] === area && ambits[key][2] === work) ?? 'paltro');
   return Object.keys(ambits).find(key => ambits[key][1] === area && ambits[key][2] === work) ??
-    (area === 'Privata' ? 'private' : area === 'Professionale' ? 'professional' : 'academic');
+    (area === 'Professionale' ? 'professional' : 'academic');
 }
 const statuses = ['Da fare','Raggiunto'];
 const workLabels = {research:'Progetti di ricerca',international:'Collaborazioni internazionali',
@@ -165,7 +173,7 @@ const workOf = task => projectFor(task.project)?.work ?? task.work;
 const bucketOfWork = (work,area) => work !== 'other' ? work : area === 'Accademica' ? 'institutional' : 'professional';
 const bucketOf = task => task.area === 'Privata' ? 'private' : bucketOfWork(workOf(task), task.area);
 const bucketLabels = {research:'Ricerca',international:'Collaborazioni internazionali',teaching:'Didattica',
-  institutional:'Incarichi istituzionali',professional:'Professione e incarichi',private:'Vita privata'};
+  institutional:'Incarichi istituzionali',professional:'Professione e incarichi',private:'Personali'};
 const archiveBuckets = Object.keys(bucketLabels);
 const monthValid = value => /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 const monthValue = id => monthValid(el(id).value) ? el(id).value : dayKey().slice(0,7);
@@ -405,6 +413,7 @@ function valid(data) {
       (task.repeat === undefined || REPEAT_KEYS.includes(task.repeat)) &&
       (task.payment === undefined || task.payment === '' || paymentCategories.includes(task.payment)) &&
       (task.seriesId === undefined || (typeof task.seriesId === 'string' && task.seriesId.length <= 80 && /^[A-Za-z0-9:_-]+$/.test(task.seriesId))) &&
+      (task.ambit === undefined || Object.keys(ambits).includes(task.ambit)) &&
       (task.kind !== 'Pagamento' || task.area === 'Privata') &&
       (task.status === 'Raggiunto' ? validDate(task.completion) : task.completion === '');
   });
@@ -522,7 +531,7 @@ function importantDates() {
   for (const task of state.tasks) {
     if (!open(task)) continue;
     if (task.kind !== 'Attività') dates.push({date:task.date,time:task.startTime,title:task.title,
-      label:task.kind+' · '+[task.startTime,task.area].filter(Boolean).join(' · '),edit:() => edit(task)});
+      label:task.kind+' · '+[task.startTime,areaLabels[task.area] ?? task.area].filter(Boolean).join(' · '),edit:() => edit(task)});
     if (task.deadline && (task.kind === 'Attività' || task.deadline !== task.date)) {
       dates.push({date:task.deadline,title:task.title,label:'Scadenza · '+task.area,edit:() => edit(task)});
     }
@@ -544,7 +553,8 @@ function renderList(target, tasks, empty) {
     const row = node('article',undefined,'row');
     row.dataset.id = task.id;
     const detail = node('div');
-    const tag = node('span',task.area + (task.category ? ' · '+task.category : ''),'tag');
+    const ambitName = task.ambit && ambits[task.ambit] ? ambits[task.ambit][0] : '';
+    const tag = node('span',[areaLabels[task.area] ?? task.area, ambitName, task.category].filter(Boolean).join(' · '),'tag');
     tag.dataset.area = task.area;
     const project = state.projects.find(item => item.id === task.project);
     detail.append(taskHeading(task),tag,document.createTextNode(' '),
@@ -797,7 +807,7 @@ function renderReport() {
   }
   for (const area of selected ? [selected] : areas) {
     const group = tasks.filter(task => task.area === area);
-    addRow(area,group,true);
+    addRow(areaLabels[area] ?? area,group,true);
     for (const name of new Set(group.map(task => task.category))) {
       addRow(name || 'Senza categoria',group.filter(task => task.category === name),false);
     }
@@ -808,7 +818,7 @@ function renderSettings() {
   el('categoryList').replaceChildren(...areas.map(area => {
     const row = node('div',undefined,'row');
     const detail = node('div');
-    detail.append(node('h3',area),node('p',state.categories[area].join(' · '),'muted'));
+    detail.append(node('h3',areaLabels[area] ?? area),node('p',state.categories[area].join(' · '),'muted'));
     const actions = node('div',undefined,'actions');
     for (const name of state.categories[area]) actions.append(action('Rinomina '+name,() => {
       const next = window.prompt('Nuovo nome per '+name,name)?.trim();
@@ -944,7 +954,7 @@ function render() {
   const detail = view === 'day' ? projectFor(selectedProjectId) : null;
   el('todayLabel').textContent = readable(dayKey(),true);
   el('sectionTitle').textContent = detail ? 'Dettaglio progetto' :
-    {day:'Dashboard',calendar:'Calendario',completed:'Attività completate',private:'Vita privata',payments:'Pagamenti'}[view];
+    {day:'Dashboard',calendar:'Calendario',completed:'Attività completate',private:'Personali',payments:'Pagamenti'}[view];
   el('addEvent').hidden = el('add').hidden = view === 'completed' || view === 'private' || view === 'payments' || !!detail;
   el('dayOverview').hidden = view !== 'day' || !!detail;
   el('projectPanel').hidden = view !== 'day' || !!detail;
@@ -1014,7 +1024,7 @@ function edit(task = null, preset = {}) {
   const work = project?.work ?? task?.work ?? (area === 'Accademica' ? 'research' : 'other');
   const date = task?.date ?? preset.date ?? (['day','calendar'].includes(view) ? el('day').value || dayKey() : dayKey());
   el('kind').value = task?.kind ?? preset.kind ?? 'Attività';
-  el('ambit').value = ambitOf(area,work);
+  el('ambit').value = task?.ambit && ambits[task.ambit] ? task.ambit : ambitOf(area,work);
   el('title').value = task?.title ?? '';
   el('due').value = date;
   el('amount').value = task?.amount ?? '';
@@ -1172,6 +1182,7 @@ function csvCell(input) {
 
 for (const id of ['categoryArea']) options(el(id),areas);
 for (const id of ['areaFilter','reportArea']) options(el(id),areas,'Tutte');
+for (const id of ['categoryArea','areaFilter','reportArea']) for (const o of el(id).options) o.textContent = areaLabels[o.value] ?? o.value;
 options(el('paymentCategory'),paymentCategories);
 namedOptions(el('status'),{'Da fare':'Da svolgere',Raggiunto:'Completata'});
 namedOptions(el('statusFilter'),{'':'Tutti','Da fare':'Da svolgere',Raggiunto:'Completata'});
@@ -1286,7 +1297,8 @@ el('taskForm').addEventListener('submit',event => {
   const isEvent = kind === 'Evento' || kind === 'Appuntamento';
   const isPayment = kind === 'Pagamento';
   const prior = state.tasks.find(task => task.id === editing);
-  const [,ambitArea,ambitWork] = ambits[el('ambit').value];
+  const ambitKey = el('ambit').value;
+  const [,ambitArea,ambitWork] = ambits[ambitKey];
   const area = isPayment ? 'Privata' : ambitArea;
   const work = isPayment ? 'other' : ambitWork;
   const date = el('due').value;
@@ -1305,7 +1317,7 @@ el('taskForm').addEventListener('submit',event => {
     place:isEvent ? el('place').value.trim() : '',
     category:operational,project:isPayment ? '' : el('project').value,
     teaching:work === 'teaching' && teachingNames.includes(operational) ? operational : '',
-    completion:status === 'Raggiunto' ? el('completion').value : '',status,notes:el('notes').value.trim()};
+    completion:status === 'Raggiunto' ? el('completion').value : '',status,notes:el('notes').value.trim(),ambit:ambitKey};
   if (isPayment) {
     task.amount = Number(String(el('amount').value).replace(',','.')) || 0;
     task.repeat = el('repeat').value;
@@ -1364,6 +1376,7 @@ el('csv').addEventListener('click',() => {
     'report-'+start+'-'+end+'.csv','text/csv;charset=utf-8');
 });
 options(el('icsArea'),areas,undefined,'Privata');
+for (const o of el('icsArea').options) o.textContent = areaLabels[o.value] ?? o.value;
 el('openIcs').addEventListener('click',() => {
   el('icsForm').reset();
   el('icsArea').value = 'Privata';
@@ -1517,4 +1530,4 @@ setInterval(refreshToday,60000);
 if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
-</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5f4006c8ad0ea3c',t:'MTc5NTQ3NzA0NQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5f4006c8ad0ea3c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html>
+</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5f6d5f64ffdea40',t:'MTc5NTUwNjc2Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5f6d5f64ffdea40',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html>
