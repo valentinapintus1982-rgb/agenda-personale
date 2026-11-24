@@ -65,6 +65,9 @@ dialog{max-height:90vh;overflow:auto}
 /* === Gerarchia visiva rinnovata (2026-11): tipografia, spazi, pannelli calmi === */
 :root{--panel-soft:#fbfafc;--line-soft:#ece9f1;--eyebrow:#6f6a7c}
 main{margin-inline:auto;margin-block:0}
+#categoryList .row{grid-template-columns:minmax(0,1fr);gap:.55rem}
+#categoryList .row h3{overflow-wrap:normal}
+#categoryList .actions button{padding:.35rem .6rem;font-size:.85rem}
 .panel{padding:1.15rem 1.3rem;border-color:#e9e6ee;box-shadow:0 1px 2px #1d1a260f;margin-top:1.1rem}
 main > .flex.between{padding-bottom:.5rem;border-bottom:1px solid var(--line-soft)}
 #sectionTitle{font-size:1.42rem;font-weight:650;letter-spacing:-.03em}
@@ -1081,9 +1084,10 @@ function taskControls() {
   el('operationalChoices').replaceChildren(...[...new Set([...suggestions,...state.categories[area]])].map(value => new Option(value)));
 }
 function chooseProjects(selected = '') {
-  const [,area,work] = ambits[el('ambit').value];
-  el('project').replaceChildren(new Option('Nessun progetto',''),...state.projects
-    .filter(project => project.id === selected || (project.area === area && project.work === work))
+  const [,area] = ambits[el('ambit').value];
+  el('project').replaceChildren(new Option('Nessun progetto',''),...[...state.projects]
+    .sort((a,b) => a.name.localeCompare(b.name,'it'))
+    .filter(project => project.id === selected || project.area === area)
     .map(project => new Option(project.name,project.id)));
   el('project').value = [...el('project').options].some(option => option.value === selected) ? selected : '';
   taskControls();
@@ -1602,4 +1606,4 @@ setInterval(refreshToday,60000);
 if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
-</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5fbba95a806ea43',t:'MTc5NTU1ODA3MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5fbba95a806ea43',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html>
+</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5fbc9c168d8ea43',t:'MTc5NTU1ODY5Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5fbc9c168d8ea43',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html>
